@@ -1,7 +1,7 @@
 
 ## Aspects I really like
 
-1. The use of univerals references to determine wheter the operations can take place in-place or not. Looks like standard c++ move semantics from the algorithm client's perspective.
+1. The use of univeral references to determine wheter the operations can take place in-place or not. Looks like standard c++ move semantics from the algorithm client's perspective.
 1. Doing away with Properties, in favour of usual c++ function arguments. Looks like standard c++ from the algorithm author and callers perspective.
 1. Aligned with the above, better compile-time checking and type safety around combining algoithms with workspaces, and making calls to them.
 1. I like the overall generic workspace exposing iterators for accessing the data.
