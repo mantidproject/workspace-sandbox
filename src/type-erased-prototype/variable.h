@@ -78,6 +78,10 @@ public:
     return gsl::make_span(cast<std::vector<typename Tag::type>>());
   }
 
+  template <class Tag> auto getView() const {
+    return cast<DatasetView<Tag>>();
+  }
+
   template <class Tag>
   auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
     return const_cast<const Variable *>(this)->get<Tag>();

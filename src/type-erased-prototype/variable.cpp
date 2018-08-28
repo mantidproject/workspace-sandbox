@@ -1,3 +1,4 @@
+#include "dataset_view.h"
 #include "variable.h"
 #include "variable_view.h"
 
@@ -119,6 +120,57 @@ public:
   T m_model;
 };
 
+// Specialization for the case of holding a DatasetView.
+template <class T>
+class VariableModel<DatasetView<T>> : public VariableConcept {
+public:
+  VariableModel(Dimensions dimensions, DatasetView<T> model)
+      : m_dimensions(std::move(dimensions)), m_model(std::move(model)) {
+    if (m_dimensions.volume() != m_model.size())
+      throw std::runtime_error("Creating Variable: data size does not match "
+                               "volume given by dimension extents");
+  }
+
+  std::unique_ptr<VariableConcept> clone() const override {
+    // TODO make a copy here and extract data?
+    // But be careful regarding interaction with COW.
+    return std::make_unique<VariableModel<DatasetView<T>>>(m_dimensions,
+                                                           m_model);
+  }
+
+  bool operator==(const VariableConcept &other) const override {
+    throw std::runtime_error("Not implemented");
+  }
+
+  VariableConcept &operator+=(const VariableConcept &other) override {
+    throw std::runtime_error("Not implemented");
+  }
+
+  VariableConcept &operator*=(const VariableConcept &other) override {
+    throw std::runtime_error("Not implemented");
+  }
+
+  gsl::index size() const override { return m_model.size(); }
+  void resize(const gsl::index size) override {
+    throw std::runtime_error("Cannot resize: Variable references data "
+                             "in a Dataset so size cannot be changed.");
+  }
+
+  void copyFrom(const VariableConcept &otherConcept, const Dimension dim,
+                const gsl::index offset) override {
+    throw std::runtime_error("Not implemented");
+  }
+
+  const Dimensions &dimensions() const override { return m_dimensions; }
+  void setDimensions(const Dimensions &dimensions) override {
+    throw std::runtime_error("Cannot set dimensions: Variable references data "
+                             "in a Dataset so size cannot be changed.");
+  }
+
+  Dimensions m_dimensions;
+  DatasetView<T> m_model;
+};
+
 template <class T>
 Variable::Variable(uint32_t id, const Unit::Id unit, Dimensions dimensions,
                    T object)
@@ -145,6 +197,14 @@ INSTANTIATE(double)
 INSTANTIATE(int32_t)
 INSTANTIATE(int64_t)
 INSTANTIATE(std::vector<gsl::index>)
+
+#define INSTANTIATE_VIEW(type)                                                 \
+  template Variable::Variable(uint32_t, const Unit::Id, Dimensions,            \
+                              DatasetView<type>);                              \
+  template DatasetView<type> &Variable::cast<DatasetView<type>>();             \
+  template const DatasetView<type> &Variable::cast<DatasetView<type>>() const;
+
+INSTANTIATE_VIEW(Data::Value)
 
 bool Variable::operator==(const Variable &other) const {
   // Compare even before pointer comparison since data may be shared even if
